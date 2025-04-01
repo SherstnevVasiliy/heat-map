@@ -20,7 +20,7 @@
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/your-username/heatmap-clicks.git
+git clone https://github.com/SherstnevVasiliy/heat-map.git
 ```
 
 2. Установите зависимости:
