@@ -11,12 +11,12 @@ interface ClickPoint {
 
 interface HeatMapContainerProps {
   imageUrl: string;
-  width?: number;
-  height?: number;
+  aspectRatio?: number;
 }
 
-const HeatMapContainer = ({ imageUrl, width = 600, height = 600 }: HeatMapContainerProps) => {
+const HeatMapContainer = ({ imageUrl, aspectRatio = 1 }: HeatMapContainerProps) => {
   const [points, setPoints] = useState<ClickPoint[]>([]);
+  console.log(points);
 
   const handlePointsChange = (newPoints: ClickPoint[]) => {
     setPoints(newPoints);
@@ -28,8 +28,7 @@ const HeatMapContainer = ({ imageUrl, width = 600, height = 600 }: HeatMapContai
         <h2>Интерактивная карта</h2>
         <InteractiveHeatMap
           imageUrl={imageUrl}
-          width={width}
-          height={height}
+          aspectRatio={aspectRatio}
           onPointsChange={handlePointsChange}
         />
       </div>
@@ -37,8 +36,7 @@ const HeatMapContainer = ({ imageUrl, width = 600, height = 600 }: HeatMapContai
         <h2>Тепловая карта</h2>
         <HeatMap
           imageUrl={imageUrl}
-          width={width}
-          height={height}
+          aspectRatio={aspectRatio}
           points={points}
         />
       </div>
