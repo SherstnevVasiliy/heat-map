@@ -15,11 +15,11 @@ interface InteractiveHeatMapProps {
 }
 
 const MAX_COORDINATE = 100;
-const ASPECT_RATIO = 4/3;
+const ASPECT_RATIO = 1/1;
 const TAP_THRESHOLD = 10;
 const POINT_RADIUS = 30;
 
-const InteractiveHeatMap = ({ imageUrl, width = 800, height = 600, onPointsChange }: InteractiveHeatMapProps) => {
+const InteractiveHeatMap = ({ imageUrl, width = 600, height = 600, onPointsChange }: InteractiveHeatMapProps) => {
   const [points, setPoints] = useState<ClickPoint[]>([]);
   const [dimensions, setDimensions] = useState({ width, height });
   const containerRef = useRef<HTMLDivElement>(null);

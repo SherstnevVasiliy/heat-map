@@ -15,7 +15,7 @@ interface HeatMapContainerProps {
   height?: number;
 }
 
-const HeatMapContainer = ({ imageUrl, width = 800, height = 600 }: HeatMapContainerProps) => {
+const HeatMapContainer = ({ imageUrl, width = 600, height = 600 }: HeatMapContainerProps) => {
   const [points, setPoints] = useState<ClickPoint[]>([]);
 
   const handlePointsChange = (newPoints: ClickPoint[]) => {
