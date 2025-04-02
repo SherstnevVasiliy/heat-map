@@ -4,25 +4,24 @@ import styles from './HeatMap.module.css';
 interface ClickPoint {
   x: number;
   y: number;
+  id: string;
 }
 
 interface HeatMapProps {
   imageUrl: string;
   width?: number;
   height?: number;
+  points: ClickPoint[];
 }
 
 const MAX_COORDINATE = 100;
 const ASPECT_RATIO = 4/3; // Соотношение сторон по умолчанию
-const TAP_THRESHOLD = 10; // Максимальное расстояние для определения тапа в пикселях
 
-const HeatMap = ({ imageUrl, width = 800, height = 600 }: HeatMapProps) => {
-  const [clicks, setClicks] = useState<ClickPoint[]>([]);
+const HeatMap = ({ imageUrl, width = 800, height = 600, points }: HeatMapProps) => {
   const [dimensions, setDimensions] = useState({ width, height });
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -43,63 +42,6 @@ const HeatMap = ({ imageUrl, width = 800, height = 600 }: HeatMapProps) => {
     };
   }, [width]);
 
-  const normalizeCoordinates = (x: number, y: number): ClickPoint => {
-    const normalizedX = Math.round((x / dimensions.width) * MAX_COORDINATE);
-    const normalizedY = Math.round((y / dimensions.height) * MAX_COORDINATE);
-    return {
-      x: Math.min(Math.max(normalizedX, 0), MAX_COORDINATE),
-      y: Math.min(Math.max(normalizedY, 0), MAX_COORDINATE)
-    };
-  };
-
-  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    const normalizedPoint = normalizeCoordinates(x, y);
-    setClicks(prev => [...prev, normalizedPoint]);
-  };
-
-  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const touch = event.touches[0];
-    const rect = event.currentTarget.getBoundingClientRect();
-    touchStartRef.current = {
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top
-    };
-  };
-
-  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    
-    if (!touchStartRef.current) return;
-
-    const touch = event.changedTouches[0];
-    const rect = event.currentTarget.getBoundingClientRect();
-    const endX = touch.clientX - rect.left;
-    const endY = touch.clientY - rect.top;
-
-    // Вычисляем расстояние между начальной и конечной точкой касания
-    const distance = Math.sqrt(
-      Math.pow(endX - touchStartRef.current.x, 2) + 
-      Math.pow(endY - touchStartRef.current.y, 2)
-    );
-
-    // Если расстояние меньше порога, считаем это тапом
-    if (distance < TAP_THRESHOLD) {
-      const normalizedPoint = normalizeCoordinates(
-        touchStartRef.current.x,
-        touchStartRef.current.y
-      );
-      setClicks(prev => [...prev, normalizedPoint]);
-    }
-
-    // Сбрасываем начальную точку
-    touchStartRef.current = null;
-  };
-
   const drawHeatMap = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -118,7 +60,7 @@ const HeatMap = ({ imageUrl, width = 800, height = 600 }: HeatMapProps) => {
     if (!tempCtx) return;
 
     // Рисуем каждый клик на временном canvas
-    clicks.forEach(point => {
+    points.forEach(point => {
       // Денормализуем координаты для отображения
       const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
       const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
@@ -190,15 +132,12 @@ const HeatMap = ({ imageUrl, width = 800, height = 600 }: HeatMapProps) => {
 
   useEffect(() => {
     drawHeatMap();
-  }, [clicks, dimensions]);
+  }, [points, dimensions]);
 
   return (
     <div 
       ref={containerRef}
       className={styles.container}
-      onClick={handleClick}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
     >
       <img
         ref={imageRef}

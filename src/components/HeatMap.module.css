@@ -1,3 +1,24 @@
+.containerWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mapSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mapSection h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
 .container {
   position: relative;
   cursor: pointer;
@@ -30,6 +51,15 @@
 }
 
 @media (max-width: 768px) {
+  .containerWrapper {
+    padding: 0.5rem;
+    gap: 1rem;
+  }
+
+  .mapSection h2 {
+    font-size: 1.2rem;
+  }
+
   .container {
     border-radius: 4px;
   }
