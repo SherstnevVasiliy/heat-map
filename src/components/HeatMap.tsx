@@ -12,17 +12,29 @@ interface HeatMapProps {
   height?: number;
 }
 
+const MAX_COORDINATE = 100;
+
 const HeatMap = ({ imageUrl, width = 800, height = 600 }: HeatMapProps) => {
   const [clicks, setClicks] = useState<ClickPoint[]>([]);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const normalizeCoordinates = (x: number, y: number): ClickPoint => {
+    const normalizedX = Math.round((x / width) * MAX_COORDINATE);
+    const normalizedY = Math.round((y / height) * MAX_COORDINATE);
+    return {
+      x: Math.min(Math.max(normalizedX, 0), MAX_COORDINATE),
+      y: Math.min(Math.max(normalizedY, 0), MAX_COORDINATE)
+    };
+  };
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    setClicks(prev => [...prev, { x, y }]);
+    const normalizedPoint = normalizeCoordinates(x, y);
+    setClicks(prev => [...prev, normalizedPoint]);
   };
 
   const handleTouch = (event: React.TouchEvent<HTMLDivElement>) => {
@@ -32,7 +44,8 @@ const HeatMap = ({ imageUrl, width = 800, height = 600 }: HeatMapProps) => {
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
     
-    setClicks(prev => [...prev, { x, y }]);
+    const normalizedPoint = normalizeCoordinates(x, y);
+    setClicks(prev => [...prev, normalizedPoint]);
   };
 
   const drawHeatMap = () => {
@@ -54,9 +67,13 @@ const HeatMap = ({ imageUrl, width = 800, height = 600 }: HeatMapProps) => {
 
     // Рисуем каждый клик на временном canvas
     clicks.forEach(point => {
+      // Денормализуем координаты для отображения
+      const denormalizedX = (point.x / MAX_COORDINATE) * width;
+      const denormalizedY = (point.y / MAX_COORDINATE) * height;
+
       const gradient = tempCtx.createRadialGradient(
-        point.x, point.y, 0,
-        point.x, point.y, 50
+        denormalizedX, denormalizedY, 0,
+        denormalizedX, denormalizedY, 50
       );
 
       gradient.addColorStop(0, 'rgba(255, 255, 0, 0.2)'); // Желтый
@@ -64,7 +81,7 @@ const HeatMap = ({ imageUrl, width = 800, height = 600 }: HeatMapProps) => {
 
       tempCtx.fillStyle = gradient;
       tempCtx.beginPath();
-      tempCtx.arc(point.x, point.y, 50, 0, Math.PI * 2);
+      tempCtx.arc(denormalizedX, denormalizedY, 50, 0, Math.PI * 2);
       tempCtx.fill();
     });
 
