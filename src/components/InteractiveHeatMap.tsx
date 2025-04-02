@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import styles from './HeatMap.module.css';
+import './HeatMap.css';
 
 interface ClickPoint {
   x: number;
@@ -281,37 +281,32 @@ const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: Inter
 
   return (
     <div 
+      className="container" 
       ref={containerRef}
-      className={styles.container}
       onClick={handleClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className={styles.imageContainer} style={{ position: 'relative' }}>
+      <div className="image-container">
         <img
           ref={imageRef}
           src={imageUrl}
-          alt="Interactive heat map background"
-          className={styles.image}
+          alt="Интерактивная карта"
+          className="image"
           style={{ 
             width: dimensions.width > 0 ? dimensions.width : 'auto', 
-            height: dimensions.height > 0 ? dimensions.height : 'auto',
-            maxWidth: '100%',
-            maxHeight: '100%',
-            display: 'block'
+            height: dimensions.height > 0 ? dimensions.height : 'auto'
           }}
           onLoad={handleImageLoad}
         />
         <canvas
           ref={canvasRef}
-          className={styles.canvas}
+          className="canvas"
           style={{ 
-            position: 'absolute',
-            top: 0,
-            left: 0,
             width: dimensions.width > 0 ? dimensions.width : 0, 
             height: dimensions.height > 0 ? dimensions.height : 0
           }}
+          aria-hidden="true"
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import InteractiveHeatMap from './InteractiveHeatMap';
 import HeatMap from './HeatMap';
-import styles from './HeatMap.module.css';
+import './HeatMap.css';
 
 interface ClickPoint {
   x: number;
@@ -23,8 +23,8 @@ const HeatMapContainer = ({ imageUrl, aspectRatio = 1 }: HeatMapContainerProps) 
   };
 
   return (
-    <div className={styles.containerWrapper}>
-      <div className={styles.mapSection}>
+    <div className="container-wrapper">
+      <div className="map-section">
         <h2>Интерактивная карта</h2>
         <InteractiveHeatMap
           imageUrl={imageUrl}
@@ -32,7 +32,7 @@ const HeatMapContainer = ({ imageUrl, aspectRatio = 1 }: HeatMapContainerProps) 
           onPointsChange={handlePointsChange}
         />
       </div>
-      <div className={styles.mapSection}>
+      <div className="map-section">
         <h2>Тепловая карта</h2>
         <HeatMap
           imageUrl={imageUrl}

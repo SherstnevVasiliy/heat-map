@@ -1,4 +1,4 @@
-.containerWrapper {
+.container-wrapper {
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -8,14 +8,14 @@
   width: 100%;
 }
 
-.mapSection {
+.map-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   width: 100%;
 }
 
-.mapSection h2 {
+.map-section h2 {
   margin: 0;
   font-size: 1.5rem;
   color: #333;
@@ -30,13 +30,13 @@
   border-radius: 8px;
   overflow: hidden;
   width: 100%;
-  height: 600px; /* Фиксированная высота, можно настроить */
+  height: 600px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.imageContainer {
+.image-container {
   position: relative;
   display: flex;
   justify-content: center;
@@ -51,6 +51,8 @@
   max-height: 100%;
   border-radius: 8px;
   object-fit: contain;
+  width: auto;
+  height: auto;
 }
 
 .canvas {
@@ -71,7 +73,7 @@
   width: 100%;
 }
 
-.toggleButton {
+.toggle-button {
   padding: 0.5rem 1rem;
   font-size: 1rem;
   color: #333;
@@ -82,31 +84,30 @@
   transition: all 0.2s ease;
 }
 
-.toggleButton:hover {
+.toggle-button:hover {
   background-color: #f0f0f0;
   border-color: #999;
 }
 
-.toggleButton:focus {
+.toggle-button:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {
-  .containerWrapper {
+  .container-wrapper {
     padding: 0.5rem;
     gap: 1rem;
   }
 
-  .mapSection h2 {
+  .map-section h2 {
     font-size: 1.2rem;
   }
 
   .container {
-    border-radius: 4px;
-    height: 400px; /* Уменьшаем высоту на мобильных устройствах */
+    height: 400px;
   }
-  
+
   .image, .canvas {
     border-radius: 4px;
   }

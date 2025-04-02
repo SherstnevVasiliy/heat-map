@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import styles from './HeatMap.module.css';
+import './HeatMap.css';
 
 interface ClickPoint {
   x: number;
@@ -189,43 +189,35 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
   }, [points, dimensions, isSimpleMode, isImageLoaded]);
 
   return (
-    <div className={styles.wrapper}>
-      <button 
+    <div className="wrapper">
+      <button
+        className="toggle-button"
         onClick={handleToggleMode}
-        className={styles.toggleButton}
-        aria-label={isSimpleMode ? "Переключить в режим тепловой карты" : "Переключить в простой режим"}
+        aria-label={isSimpleMode ? 'Включить режим тепловой карты' : 'Выключить режим тепловой карты'}
       >
-        {isSimpleMode ? "Режим тепловой карты" : "Простой режим"}
+        {isSimpleMode ? 'Включить тепловую карту' : 'Выключить тепловую карту'}
       </button>
-      <div 
-        ref={containerRef}
-        className={styles.container}
-      >
-        <div className={styles.imageContainer} style={{ position: 'relative' }}>
+      <div className="container" ref={containerRef}>
+        <div className="image-container">
           <img
             ref={imageRef}
             src={imageUrl}
-            alt="Heat map background"
-            className={styles.image}
+            alt="Тепловая карта"
+            className="image"
             style={{ 
               width: dimensions.width > 0 ? dimensions.width : 'auto', 
-              height: dimensions.height > 0 ? dimensions.height : 'auto',
-              maxWidth: '100%',
-              maxHeight: '100%',
-              display: 'block'
+              height: dimensions.height > 0 ? dimensions.height : 'auto'
             }}
             onLoad={handleImageLoad}
           />
           <canvas
             ref={canvasRef}
-            className={styles.canvas}
+            className="canvas"
             style={{ 
-              position: 'absolute',
-              top: 0,
-              left: 0,
               width: dimensions.width > 0 ? dimensions.width : 0, 
               height: dimensions.height > 0 ? dimensions.height : 0
             }}
+            aria-hidden="true"
           />
         </div>
       </div>
