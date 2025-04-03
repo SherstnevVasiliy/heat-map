@@ -28,23 +28,6 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
   const MAX_INTENSITY = 0.8;
   const MIN_INTENSITY = 0.3;
 
-  // Функция для расчета базовой интенсивности
-  const calculateBaseIntensity = () => {
-    if (points.length <= MIN_POINTS_FOR_NORMAL_INTENSITY) {
-      return MAX_INTENSITY;
-    }
-    return Math.max(
-      MIN_INTENSITY,
-      MAX_INTENSITY - (points.length - MIN_POINTS_FOR_NORMAL_INTENSITY) * 0.05
-    );
-  };
-
-  // Обработчик загрузки изображения
-  const handleImageLoad = () => {
-    setIsImageLoaded(true);
-    updateDimensions();
-  };
-
   const updateDimensions = () => {
     if (!containerRef.current) return;
 
@@ -77,6 +60,23 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     }
 
     setDimensions({ width: newWidth, height: newHeight });
+  };
+
+  // Функция для расчета базовой интенсивности
+  const calculateBaseIntensity = () => {
+    if (points.length <= MIN_POINTS_FOR_NORMAL_INTENSITY) {
+      return MAX_INTENSITY;
+    }
+    return Math.max(
+      MIN_INTENSITY,
+      MAX_INTENSITY - (points.length - MIN_POINTS_FOR_NORMAL_INTENSITY) * 0.05
+    );
+  };
+
+  // Обработчик загрузки изображения
+  const handleImageLoad = () => {
+    setIsImageLoaded(true);
+    updateDimensions();
   };
 
   useEffect(() => {

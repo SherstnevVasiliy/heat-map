@@ -34,26 +34,6 @@ const InteractiveHeatMap = ({
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    // Определяем, является ли устройство мобильным
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-    };
-  }, []);
-
-  // Обработчик загрузки изображения
-  const handleImageLoad = () => {
-    setIsImageLoaded(true);
-    updateDimensions();
-  };
-
   const updateDimensions = () => {
     if (!containerRef.current || !imageRef.current) return;
 
@@ -86,6 +66,26 @@ const InteractiveHeatMap = ({
     }
 
     setDimensions({ width: newWidth, height: newHeight });
+  };
+
+  useEffect(() => {
+    // Определяем, является ли устройство мобильным
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+
+  // Обработчик загрузки изображения
+  const handleImageLoad = () => {
+    setIsImageLoaded(true);
+    updateDimensions();
   };
 
   useEffect(() => {
@@ -223,19 +223,19 @@ const InteractiveHeatMap = ({
       return;
     }
 
-    const distance = Math.sqrt(
+    const touchDistance = Math.sqrt(
       Math.pow(endX - touchStartRef.current.x, 2) + Math.pow(endY - touchStartRef.current.y, 2)
     );
     const duration = Date.now() - touchStartRef.current.time;
 
-    if (distance < TAP_THRESHOLD && duration < 300) {
+    if (touchDistance < TAP_THRESHOLD && duration < 300) {
       const tappedPoint = points.find((point) => {
         const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
         const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
-        const distance = Math.sqrt(
+        const pointDistance = Math.sqrt(
           Math.pow(endX - denormalizedX, 2) + Math.pow(endY - denormalizedY, 2)
         );
-        return distance <= POINT_RADIUS;
+        return pointDistance <= POINT_RADIUS;
       });
 
       if (tappedPoint) {
@@ -248,10 +248,10 @@ const InteractiveHeatMap = ({
       const tappedPoint = points.find((point) => {
         const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
         const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
-        const distance = Math.sqrt(
+        const pointDistance = Math.sqrt(
           Math.pow(endX - denormalizedX, 2) + Math.pow(endY - denormalizedY, 2)
         );
-        return distance <= POINT_RADIUS;
+        return pointDistance <= POINT_RADIUS;
       });
 
       if (tappedPoint) {
@@ -352,8 +352,46 @@ const InteractiveHeatMap = ({
     onPointsChange(points);
   }, [points, onPointsChange]);
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (!isMobile && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const { x, y } = getImageRelativeCoordinates(centerX, centerY);
+
+        if (x >= 0 && y >= 0 && x <= dimensions.width && y <= dimensions.height) {
+          const clickedPoint = points.find((point) => {
+            const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
+            const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
+            const distance = Math.sqrt(
+              Math.pow(x - denormalizedX, 2) + Math.pow(y - denormalizedY, 2)
+            );
+            return distance <= POINT_RADIUS;
+          });
+
+          if (clickedPoint) {
+            setPoints((prev) => prev.filter((point) => point.id !== clickedPoint.id));
+          } else if (!isPointNearby(x, y) && points.length < MAX_POINTS) {
+            const normalizedPoint = normalizeCoordinates(x, y);
+            setPoints((prev) => [...prev, normalizedPoint]);
+          }
+        }
+      }
+    }
+  };
+
   return (
-    <div className="container" ref={containerRef} onClick={!isMobile ? handleClick : undefined}>
+    <div
+      className="container"
+      ref={containerRef}
+      onClick={!isMobile ? handleClick : undefined}
+      onKeyDown={!isMobile ? handleKeyDown : undefined}
+      role="button"
+      tabIndex={0}
+      aria-label="Интерактивная карта для добавления и удаления точек"
+    >
       <div className="image-container">
         <img
           ref={imageRef}
