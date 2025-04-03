@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import InteractiveHeatMap from './InteractiveHeatMap';
 import HeatMap from './HeatMap';
-import './HeatMap.css';
+import './HeatMapContainer.css';
 
 interface ClickPoint {
   x: number;

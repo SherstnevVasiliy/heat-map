@@ -1,0 +1,33 @@
+.container-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.map-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.map-section h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .container-wrapper {
+    padding: 0.5rem;
+    gap: 1rem;
+  }
+
+  .map-section h2 {
+    font-size: 1.2rem;
+  }
+} 
