@@ -6,10 +6,7 @@ function App() {
     <div className="app">
       <div className="content">
         <h1>Тепловая карта кликов</h1>
-        <HeatMapContainer 
-          imageUrl="sample-image.webp"
-          aspectRatio={1}
-        />
+        <HeatMapContainer imageUrl="sample-image.webp" aspectRatio={1} />
       </div>
     </div>
   );

@@ -33,7 +33,10 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     if (points.length <= MIN_POINTS_FOR_NORMAL_INTENSITY) {
       return MAX_INTENSITY;
     }
-    return Math.max(MIN_INTENSITY, MAX_INTENSITY - (points.length - MIN_POINTS_FOR_NORMAL_INTENSITY) * 0.05);
+    return Math.max(
+      MIN_INTENSITY,
+      MAX_INTENSITY - (points.length - MIN_POINTS_FOR_NORMAL_INTENSITY) * 0.05
+    );
   };
 
   // Обработчик загрузки изображения
@@ -44,18 +47,18 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
 
   const updateDimensions = () => {
     if (!containerRef.current) return;
-    
+
     const containerWidth = containerRef.current.clientWidth;
     const containerHeight = containerRef.current.clientHeight;
-    
+
     // Размеры с учетом соотношения сторон и размеров контейнера
     let newWidth, newHeight;
-    
+
     if (aspectRatio >= 1) {
       // Изображение шире, чем выше (или квадратное)
       newWidth = containerWidth;
       newHeight = containerWidth / aspectRatio;
-      
+
       // Если высота больше контейнера, уменьшаем
       if (newHeight > containerHeight) {
         newHeight = containerHeight;
@@ -65,14 +68,14 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
       // Изображение выше, чем шире
       newHeight = containerHeight;
       newWidth = containerHeight * aspectRatio;
-      
+
       // Если ширина больше контейнера, уменьшаем
       if (newWidth > containerWidth) {
         newWidth = containerWidth;
         newHeight = containerWidth / aspectRatio;
       }
     }
-    
+
     setDimensions({ width: newWidth, height: newHeight });
   };
 
@@ -105,10 +108,10 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     if (isSimpleMode) {
       // Простой режим: рисуем красные круги
       ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
-      points.forEach(point => {
+      points.forEach((point) => {
         const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
         const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
-        
+
         // Рисуем точку на правильной позиции
         const radius = 25;
         ctx.beginPath();
@@ -129,13 +132,17 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     const heatRadius = 50; // Радиус тепловой точки
 
     // Рисуем каждый клик на временном canvas
-    points.forEach(point => {
+    points.forEach((point) => {
       const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
       const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
 
       const gradient = tempCtx.createRadialGradient(
-        denormalizedX, denormalizedY, 0,
-        denormalizedX, denormalizedY, heatRadius
+        denormalizedX,
+        denormalizedY,
+        0,
+        denormalizedX,
+        denormalizedY,
+        heatRadius
       );
 
       gradient.addColorStop(0, `rgba(255, 0, 0, ${baseIntensity})`); // Красный
@@ -156,14 +163,14 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
         // Обрабатываем каждый пиксель
         for (let i = 0; i < data.length; i += 4) {
           const intensity = data[i + 3] / 255;
-          
+
           if (intensity > 0) {
             // Преобразуем интенсивность в цвет от красного к желтому
             const red = 255;
             const green = Math.floor(255 * intensity);
             const blue = 0;
-            
-            data[i] = red;     // R
+
+            data[i] = red; // R
             data[i + 1] = green; // G
             data[i + 2] = blue; // B
             data[i + 3] = intensity * 255; // A
@@ -174,12 +181,12 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
         ctx.putImageData(imageData, 0, 0);
       }
     } catch (error) {
-      console.error("Error processing canvas data:", error);
+      console.error('Error processing canvas data:', error);
     }
   };
 
   const handleToggleMode = () => {
-    setIsSimpleMode(prev => !prev);
+    setIsSimpleMode((prev) => !prev);
   };
 
   useEffect(() => {
@@ -193,7 +200,9 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
       <button
         className="toggle-button"
         onClick={handleToggleMode}
-        aria-label={isSimpleMode ? 'Включить режим тепловой карты' : 'Выключить режим тепловой карты'}
+        aria-label={
+          isSimpleMode ? 'Включить режим тепловой карты' : 'Выключить режим тепловой карты'
+        }
       >
         {isSimpleMode ? 'Включить тепловую карту' : 'Выключить тепловую карту'}
       </button>
@@ -204,18 +213,18 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
             src={imageUrl}
             alt="Тепловая карта"
             className="image"
-            style={{ 
-              width: dimensions.width > 0 ? dimensions.width : 'auto', 
-              height: dimensions.height > 0 ? dimensions.height : 'auto'
+            style={{
+              width: dimensions.width > 0 ? dimensions.width : 'auto',
+              height: dimensions.height > 0 ? dimensions.height : 'auto',
             }}
             onLoad={handleImageLoad}
           />
           <canvas
             ref={canvasRef}
             className="canvas"
-            style={{ 
-              width: dimensions.width > 0 ? dimensions.width : 0, 
-              height: dimensions.height > 0 ? dimensions.height : 0
+            style={{
+              width: dimensions.width > 0 ? dimensions.width : 0,
+              height: dimensions.height > 0 ? dimensions.height : 0,
             }}
             aria-hidden="true"
           />
@@ -225,4 +234,4 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
   );
 };
 
-export default HeatMap; 
+export default HeatMap;

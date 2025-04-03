@@ -34,14 +34,10 @@ const HeatMapContainer = ({ imageUrl, aspectRatio = 1 }: HeatMapContainerProps) 
       </div>
       <div className="map-section">
         <h2>Тепловая карта</h2>
-        <HeatMap
-          imageUrl={imageUrl}
-          aspectRatio={aspectRatio}
-          points={points}
-        />
+        <HeatMap imageUrl={imageUrl} aspectRatio={aspectRatio} points={points} />
       </div>
     </div>
   );
 };
 
-export default HeatMapContainer; 
+export default HeatMapContainer;
