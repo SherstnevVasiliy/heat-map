@@ -147,6 +147,57 @@ const InteractiveHeatMap = ({
     });
   };
 
+  const drawPoints = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if (dimensions.width <= 0 || dimensions.height <= 0) return;
+
+    canvas.width = dimensions.width;
+    canvas.height = dimensions.height;
+
+    ctx.clearRect(0, 0, dimensions.width, dimensions.height);
+
+    if (!buttonImageRef.current) return;
+
+    try {
+      // Рисуем постоянные точки
+      points.forEach((point) => {
+        const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
+        const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
+
+        if (buttonImageRef.current) {
+          const buttonSize = 60;
+          const offsetX = buttonSize / 2;
+          const offsetY = buttonSize / 2;
+
+          ctx.save();
+          ctx.translate(denormalizedX - offsetX, denormalizedY - offsetY);
+          ctx.drawImage(buttonImageRef.current, 0, 0, buttonSize, buttonSize);
+          ctx.restore();
+        }
+      });
+
+      // Рисуем временную точку (только для мобильных устройств)
+      if (isMobile && tempPoint) {
+        const buttonSize = 60;
+        const offsetX = buttonSize / 2;
+        const offsetY = buttonSize / 2;
+
+        ctx.save();
+        ctx.globalAlpha = 0.7; // Делаем временную точку полупрозрачной
+        ctx.translate(tempPoint.x - offsetX, tempPoint.y - offsetY);
+        ctx.drawImage(buttonImageRef.current, 0, 0, buttonSize, buttonSize);
+        ctx.restore();
+      }
+    } catch (error) {
+      console.error('Error drawing points:', error);
+    }
+  };
+
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (dimensions.width <= 0 || dimensions.height <= 0) return;
 
@@ -264,57 +315,6 @@ const InteractiveHeatMap = ({
 
     touchStartRef.current = null;
     setTempPoint(null);
-  };
-
-  const drawPoints = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    if (dimensions.width <= 0 || dimensions.height <= 0) return;
-
-    canvas.width = dimensions.width;
-    canvas.height = dimensions.height;
-
-    ctx.clearRect(0, 0, dimensions.width, dimensions.height);
-
-    if (!buttonImageRef.current) return;
-
-    try {
-      // Рисуем постоянные точки
-      points.forEach((point) => {
-        const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
-        const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
-
-        if (buttonImageRef.current) {
-          const buttonSize = 60;
-          const offsetX = buttonSize / 2;
-          const offsetY = buttonSize / 2;
-
-          ctx.save();
-          ctx.translate(denormalizedX - offsetX, denormalizedY - offsetY);
-          ctx.drawImage(buttonImageRef.current, 0, 0, buttonSize, buttonSize);
-          ctx.restore();
-        }
-      });
-
-      // Рисуем временную точку (только для мобильных устройств)
-      if (isMobile && tempPoint) {
-        const buttonSize = 60;
-        const offsetX = buttonSize / 2;
-        const offsetY = buttonSize / 2;
-
-        ctx.save();
-        ctx.globalAlpha = 0.7; // Делаем временную точку полупрозрачной
-        ctx.translate(tempPoint.x - offsetX, tempPoint.y - offsetY);
-        ctx.drawImage(buttonImageRef.current, 0, 0, buttonSize, buttonSize);
-        ctx.restore();
-      }
-    } catch (error) {
-      console.error('Error drawing points:', error);
-    }
   };
 
   useEffect(() => {
