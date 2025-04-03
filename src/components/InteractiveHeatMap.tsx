@@ -14,18 +14,34 @@ interface InteractiveHeatMapProps {
 }
 
 const MAX_COORDINATE = 100;
-const TAP_THRESHOLD = 10;
 const POINT_RADIUS = 30;
+const TAP_THRESHOLD = 10; // Порог для определения тапа
 
 const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: InteractiveHeatMapProps) => {
   const [points, setPoints] = useState<ClickPoint[]>([]);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [tempPoint, setTempPoint] = useState<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const buttonImageRef = useRef<HTMLImageElement | null>(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Определяем, является ли устройство мобильным
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Обработчик загрузки изображения
   const handleImageLoad = () => {
@@ -173,7 +189,36 @@ const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: Inter
     const touch = event.touches[0];
     const { x, y } = getImageRelativeCoordinates(touch.clientX, touch.clientY);
     
-    touchStartRef.current = { x, y };
+    touchStartRef.current = { 
+      x, 
+      y,
+      time: Date.now()
+    };
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    
+    if (!isMobile || !touchStartRef.current) return;
+    
+    const touch = event.touches[0];
+    const { x, y } = getImageRelativeCoordinates(touch.clientX, touch.clientY);
+    
+    // Если касание за пределами изображения - игнорируем
+    if (x < 0 || y < 0 || x > dimensions.width || y > dimensions.height) {
+      setTempPoint(null);
+      return;
+    }
+
+    // Проверяем, является ли это перетаскиванием
+    const distance = Math.sqrt(
+      Math.pow(x - touchStartRef.current.x, 2) + 
+      Math.pow(y - touchStartRef.current.y, 2)
+    );
+
+    if (distance > TAP_THRESHOLD) {
+      setTempPoint({ x, y });
+    }
   };
 
   const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
@@ -188,22 +233,26 @@ const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: Inter
     // Если касание за пределами изображения - игнорируем
     if (endX < 0 || endY < 0 || endX > dimensions.width || endY > dimensions.height) {
       touchStartRef.current = null;
+      setTempPoint(null);
       return;
     }
 
+    // Проверяем, является ли это тапом
     const distance = Math.sqrt(
       Math.pow(endX - touchStartRef.current.x, 2) + 
       Math.pow(endY - touchStartRef.current.y, 2)
     );
+    const duration = Date.now() - touchStartRef.current.time;
 
-    if (distance < TAP_THRESHOLD) {
+    // Если это тап (малое расстояние и короткое время)
+    if (distance < TAP_THRESHOLD && duration < 300) {
       // Проверяем, не тапнули ли мы по существующей точке
       const tappedPoint = points.find(point => {
         const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
         const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
         const distance = Math.sqrt(
-          Math.pow(touchStartRef.current!.x - denormalizedX, 2) + 
-          Math.pow(touchStartRef.current!.y - denormalizedY, 2)
+          Math.pow(endX - denormalizedX, 2) + 
+          Math.pow(endY - denormalizedY, 2)
         );
         return distance <= POINT_RADIUS;
       });
@@ -215,12 +264,39 @@ const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: Inter
           onPointsChange(newPoints);
           return newPoints;
         });
-      } else if (!isPointNearby(touchStartRef.current.x, touchStartRef.current.y)) {
+      } else if (!isPointNearby(endX, endY)) {
         // Если тапнули не по точке и не рядом с существующей - добавляем новую
-        const normalizedPoint = normalizeCoordinates(
-          touchStartRef.current.x,
-          touchStartRef.current.y
+        const normalizedPoint = normalizeCoordinates(endX, endY);
+        setPoints(prev => {
+          const newPoints = [...prev, normalizedPoint];
+          onPointsChange(newPoints);
+          return newPoints;
+        });
+      }
+    } 
+    // Если это перетаскивание и есть временная точка
+    else if (tempPoint) {
+      // Проверяем, не тапнули ли мы по существующей точке
+      const tappedPoint = points.find(point => {
+        const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
+        const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
+        const distance = Math.sqrt(
+          Math.pow(endX - denormalizedX, 2) + 
+          Math.pow(endY - denormalizedY, 2)
         );
+        return distance <= POINT_RADIUS;
+      });
+
+      if (tappedPoint) {
+        // Если тапнули по точке - удаляем её
+        setPoints(prev => {
+          const newPoints = prev.filter(point => point.id !== tappedPoint.id);
+          onPointsChange(newPoints);
+          return newPoints;
+        });
+      } else if (!isPointNearby(endX, endY)) {
+        // Если тапнули не по точке и не рядом с существующей - добавляем новую
+        const normalizedPoint = normalizeCoordinates(endX, endY);
         setPoints(prev => {
           const newPoints = [...prev, normalizedPoint];
           onPointsChange(newPoints);
@@ -230,6 +306,7 @@ const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: Inter
     }
 
     touchStartRef.current = null;
+    setTempPoint(null);
   };
 
   const drawPoints = () => {
@@ -239,10 +316,8 @@ const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: Inter
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Проверяем, что у нас есть действительные размеры перед рисованием
     if (dimensions.width <= 0 || dimensions.height <= 0) return;
 
-    // Обновляем размеры canvas
     canvas.width = dimensions.width;
     canvas.height = dimensions.height;
 
@@ -251,14 +326,13 @@ const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: Inter
     if (!buttonImageRef.current) return;
 
     try {
-      // Рисуем точки
+      // Рисуем постоянные точки
       points.forEach(point => {
         const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
         const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
 
         if (buttonImageRef.current) {
-          // Рисуем фоновое изображение кнопки по центру точки
-          const buttonSize = 60; // Размер кнопки
+          const buttonSize = 60;
           const offsetX = buttonSize / 2;
           const offsetY = buttonSize / 2;
           
@@ -268,6 +342,19 @@ const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: Inter
           ctx.restore();
         }
       });
+
+      // Рисуем временную точку (только для мобильных устройств)
+      if (isMobile && tempPoint) {
+        const buttonSize = 60;
+        const offsetX = buttonSize / 2;
+        const offsetY = buttonSize / 2;
+        
+        ctx.save();
+        ctx.globalAlpha = 0.7; // Делаем временную точку полупрозрачной
+        ctx.translate(tempPoint.x - offsetX, tempPoint.y - offsetY);
+        ctx.drawImage(buttonImageRef.current, 0, 0, buttonSize, buttonSize);
+        ctx.restore();
+      }
     } catch (error) {
       console.error("Error drawing points:", error);
     }
@@ -277,14 +364,15 @@ const InteractiveHeatMap = ({ imageUrl, aspectRatio = 1, onPointsChange }: Inter
     if (isImageLoaded && dimensions.width > 0 && dimensions.height > 0) {
       drawPoints();
     }
-  }, [points, dimensions, isImageLoaded]);
+  }, [points, dimensions, isImageLoaded, tempPoint]);
 
   return (
     <div 
       className="container" 
       ref={containerRef}
-      onClick={handleClick}
+      onClick={!isMobile ? handleClick : undefined}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       <div className="image-container">
