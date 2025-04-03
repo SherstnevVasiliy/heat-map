@@ -8,8 +8,7 @@ function App() {
         <h1>Тепловая карта кликов</h1>
         <HeatMapContainer 
           imageUrl="sample-image.webp"
-          width={600}
-          height={600}
+          aspectRatio={1}
         />
       </div>
     </div>

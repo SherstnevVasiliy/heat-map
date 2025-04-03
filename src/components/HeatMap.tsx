@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import styles from './HeatMap.module.css';
+import './HeatMap.css';
 
 interface ClickPoint {
   x: number;
@@ -9,20 +9,19 @@ interface ClickPoint {
 
 interface HeatMapProps {
   imageUrl: string;
-  width?: number;
-  height?: number;
+  aspectRatio?: number;
   points: ClickPoint[];
 }
 
 const MAX_COORDINATE = 100;
-const ASPECT_RATIO = 1/1; // Соотношение сторон по умолчанию
 
-const HeatMap = ({ imageUrl, width = 600, height = 600, points }: HeatMapProps) => {
-  const [dimensions, setDimensions] = useState({ width, height });
+const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isSimpleMode, setIsSimpleMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   // Добавляем константы для настройки интенсивности
   const MIN_POINTS_FOR_NORMAL_INTENSITY = 10;
@@ -37,24 +36,54 @@ const HeatMap = ({ imageUrl, width = 600, height = 600, points }: HeatMapProps) 
     return Math.max(MIN_INTENSITY, MAX_INTENSITY - (points.length - MIN_POINTS_FOR_NORMAL_INTENSITY) * 0.05);
   };
 
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (!containerRef.current) return;
-      
-      const containerWidth = containerRef.current.clientWidth;
-      const newWidth = Math.min(containerWidth, width);
-      const newHeight = newWidth / ASPECT_RATIO;
-      
-      setDimensions({ width: newWidth, height: newHeight });
-    };
+  // Обработчик загрузки изображения
+  const handleImageLoad = () => {
+    setIsImageLoaded(true);
+    updateDimensions();
+  };
 
+  const updateDimensions = () => {
+    if (!containerRef.current) return;
+    
+    const containerWidth = containerRef.current.clientWidth;
+    const containerHeight = containerRef.current.clientHeight;
+    
+    // Размеры с учетом соотношения сторон и размеров контейнера
+    let newWidth, newHeight;
+    
+    if (aspectRatio >= 1) {
+      // Изображение шире, чем выше (или квадратное)
+      newWidth = containerWidth;
+      newHeight = containerWidth / aspectRatio;
+      
+      // Если высота больше контейнера, уменьшаем
+      if (newHeight > containerHeight) {
+        newHeight = containerHeight;
+        newWidth = containerHeight * aspectRatio;
+      }
+    } else {
+      // Изображение выше, чем шире
+      newHeight = containerHeight;
+      newWidth = containerHeight * aspectRatio;
+      
+      // Если ширина больше контейнера, уменьшаем
+      if (newWidth > containerWidth) {
+        newWidth = containerWidth;
+        newHeight = containerWidth / aspectRatio;
+      }
+    }
+    
+    setDimensions({ width: newWidth, height: newHeight });
+  };
+
+  useEffect(() => {
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
 
     return () => {
       window.removeEventListener('resize', updateDimensions);
     };
-  }, [width]);
+  }, [aspectRatio]);
 
   const drawHeatMap = () => {
     const canvas = canvasRef.current;
@@ -62,6 +91,13 @@ const HeatMap = ({ imageUrl, width = 600, height = 600, points }: HeatMapProps) 
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    // Проверяем, что у нас есть действительные размеры перед рисованием
+    if (dimensions.width <= 0 || dimensions.height <= 0) return;
+
+    // Обновляем размеры canvas
+    canvas.width = dimensions.width;
+    canvas.height = dimensions.height;
 
     // Очищаем canvas
     ctx.clearRect(0, 0, dimensions.width, dimensions.height);
@@ -73,8 +109,10 @@ const HeatMap = ({ imageUrl, width = 600, height = 600, points }: HeatMapProps) 
         const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
         const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
         
+        // Рисуем точку на правильной позиции
+        const radius = 25;
         ctx.beginPath();
-        ctx.arc(denormalizedX, denormalizedY, 25, 0, Math.PI * 2);
+        ctx.arc(denormalizedX, denormalizedY, radius, 0, Math.PI * 2);
         ctx.fill();
       });
       return;
@@ -88,6 +126,7 @@ const HeatMap = ({ imageUrl, width = 600, height = 600, points }: HeatMapProps) 
     if (!tempCtx) return;
 
     const baseIntensity = calculateBaseIntensity();
+    const heatRadius = 50; // Радиус тепловой точки
 
     // Рисуем каждый клик на временном canvas
     points.forEach(point => {
@@ -96,7 +135,7 @@ const HeatMap = ({ imageUrl, width = 600, height = 600, points }: HeatMapProps) 
 
       const gradient = tempCtx.createRadialGradient(
         denormalizedX, denormalizedY, 0,
-        denormalizedX, denormalizedY, 50
+        denormalizedX, denormalizedY, heatRadius
       );
 
       gradient.addColorStop(0, `rgba(255, 0, 0, ${baseIntensity})`); // Красный
@@ -104,33 +143,39 @@ const HeatMap = ({ imageUrl, width = 600, height = 600, points }: HeatMapProps) 
 
       tempCtx.fillStyle = gradient;
       tempCtx.beginPath();
-      tempCtx.arc(denormalizedX, denormalizedY, 50, 0, Math.PI * 2);
+      tempCtx.arc(denormalizedX, denormalizedY, heatRadius, 0, Math.PI * 2);
       tempCtx.fill();
     });
 
-    // Получаем данные изображения
-    const imageData = tempCtx.getImageData(0, 0, dimensions.width, dimensions.height);
-    const data = imageData.data;
+    try {
+      // Получаем данные изображения (только если размеры положительные)
+      if (dimensions.width > 0 && dimensions.height > 0) {
+        const imageData = tempCtx.getImageData(0, 0, dimensions.width, dimensions.height);
+        const data = imageData.data;
 
-    // Обрабатываем каждый пиксель
-    for (let i = 0; i < data.length; i += 4) {
-      const intensity = data[i + 3] / 255;
-      
-      if (intensity > 0) {
-        // Преобразуем интенсивность в цвет от красного к желтому
-        const red = 255;
-        const green = Math.floor(255 * intensity);
-        const blue = 0;
-        
-        data[i] = red;     // R
-        data[i + 1] = green; // G
-        data[i + 2] = blue; // B
-        data[i + 3] = intensity * 255; // A
+        // Обрабатываем каждый пиксель
+        for (let i = 0; i < data.length; i += 4) {
+          const intensity = data[i + 3] / 255;
+          
+          if (intensity > 0) {
+            // Преобразуем интенсивность в цвет от красного к желтому
+            const red = 255;
+            const green = Math.floor(255 * intensity);
+            const blue = 0;
+            
+            data[i] = red;     // R
+            data[i + 1] = green; // G
+            data[i + 2] = blue; // B
+            data[i + 3] = intensity * 255; // A
+          }
+        }
+
+        // Рисуем обработанное изображение на основном canvas
+        ctx.putImageData(imageData, 0, 0);
       }
+    } catch (error) {
+      console.error("Error processing canvas data:", error);
     }
-
-    // Рисуем обработанное изображение на основном canvas
-    ctx.putImageData(imageData, 0, 0);
   };
 
   const handleToggleMode = () => {
@@ -138,35 +183,43 @@ const HeatMap = ({ imageUrl, width = 600, height = 600, points }: HeatMapProps) 
   };
 
   useEffect(() => {
-    drawHeatMap();
-  }, [points, dimensions, isSimpleMode]);
+    if (isImageLoaded && dimensions.width > 0 && dimensions.height > 0) {
+      drawHeatMap();
+    }
+  }, [points, dimensions, isSimpleMode, isImageLoaded]);
 
   return (
-    <div className={styles.wrapper}>
-      <button 
+    <div className="wrapper">
+      <button
+        className="toggle-button"
         onClick={handleToggleMode}
-        className={styles.toggleButton}
-        aria-label={isSimpleMode ? "Переключить в режим тепловой карты" : "Переключить в простой режим"}
+        aria-label={isSimpleMode ? 'Включить режим тепловой карты' : 'Выключить режим тепловой карты'}
       >
-        {isSimpleMode ? "Режим тепловой карты" : "Простой режим"}
+        {isSimpleMode ? 'Включить тепловую карту' : 'Выключить тепловую карту'}
       </button>
-      <div 
-        ref={containerRef}
-        className={styles.container}
-      >
-        <img
-          ref={imageRef}
-          src={imageUrl}
-          alt="Heat map background"
-          className={styles.image}
-          style={{ width: dimensions.width, height: dimensions.height }}
-        />
-        <canvas
-          ref={canvasRef}
-          width={dimensions.width}
-          height={dimensions.height}
-          className={styles.canvas}
-        />
+      <div className="container" ref={containerRef}>
+        <div className="image-container">
+          <img
+            ref={imageRef}
+            src={imageUrl}
+            alt="Тепловая карта"
+            className="image"
+            style={{ 
+              width: dimensions.width > 0 ? dimensions.width : 'auto', 
+              height: dimensions.height > 0 ? dimensions.height : 'auto'
+            }}
+            onLoad={handleImageLoad}
+          />
+          <canvas
+            ref={canvasRef}
+            className="canvas"
+            style={{ 
+              width: dimensions.width > 0 ? dimensions.width : 0, 
+              height: dimensions.height > 0 ? dimensions.height : 0
+            }}
+            aria-hidden="true"
+          />
+        </div>
       </div>
     </div>
   );
