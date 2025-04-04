@@ -26,7 +26,7 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
   // Конфигурация тепловой карты
   const heatmapConfig = useMemo(
     () => ({
-      radius: 60, // Больший радиус для более плавного отображения
+      radius: 40, // Больший радиус для более плавного отображения
       blur: 0.9, // Уровень размытия для более гладкого перехода
       maxOpacity: 0.7, // Максимальная непрозрачность тепловой карты
       minOpacity: 0.2, // Минимальная непрозрачность
@@ -150,57 +150,45 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     const normalized = Math.min(1, Math.max(0, value));
 
     // Переходы цветов как в Яндекс Метрике:
-    // Темно-синий -> голубой -> зеленый -> желтый -> красный
-    if (normalized < 0.2) {
-      // Темно-синий к голубому
-      const ratio = normalized / 0.2;
+    // Темно-синий -> синий -> красный -> желтый
+    if (normalized < 0.3) {
+      // Темно-синий к синему
+      const ratio = normalized / 0.3;
       return {
         r: Math.floor(0 + ratio * 0),
-        g: Math.floor(0 + ratio * 144),
-        b: Math.floor(255),
-        a:
-          heatmapConfig.minOpacity +
-          normalized * (heatmapConfig.maxOpacity - heatmapConfig.minOpacity),
-      };
-    } else if (normalized < 0.4) {
-      // Голубой к зеленому
-      const ratio = (normalized - 0.2) / 0.2;
-      return {
-        r: Math.floor(0),
-        g: Math.floor(144 + ratio * (255 - 144)),
-        b: Math.floor(255 - ratio * 255),
+        g: Math.floor(0),
+        b: Math.floor(150 + ratio * 105),
         a:
           heatmapConfig.minOpacity +
           normalized * (heatmapConfig.maxOpacity - heatmapConfig.minOpacity),
       };
     } else if (normalized < 0.6) {
-      // Зеленый к желтому
-      const ratio = (normalized - 0.4) / 0.2;
+      // Синий к красному
+      const ratio = (normalized - 0.3) / 0.3;
       return {
         r: Math.floor(0 + ratio * 255),
-        g: Math.floor(255),
-        b: Math.floor(0),
+        g: Math.floor(0),
+        b: Math.floor(255 - ratio * 255),
         a:
           heatmapConfig.minOpacity +
           normalized * (heatmapConfig.maxOpacity - heatmapConfig.minOpacity),
       };
-    } else if (normalized < 0.8) {
-      // Желтый к оранжевому
-      const ratio = (normalized - 0.6) / 0.2;
+    } else if (normalized < 0.9) {
+      // Красный к желтому
+      const ratio = (normalized - 0.6) / 0.3;
       return {
         r: Math.floor(255),
-        g: Math.floor(255 - ratio * 165),
+        g: Math.floor(0 + ratio * 255),
         b: Math.floor(0),
         a:
           heatmapConfig.minOpacity +
           normalized * (heatmapConfig.maxOpacity - heatmapConfig.minOpacity),
       };
     } else {
-      // Оранжевый к красному
-      const ratio = (normalized - 0.8) / 0.2;
+      // Яркий желтый для самых горячих зон
       return {
         r: Math.floor(255),
-        g: Math.floor(90 - ratio * 90),
+        g: Math.floor(255),
         b: Math.floor(0),
         a:
           heatmapConfig.minOpacity +

@@ -16,7 +16,7 @@ interface InteractiveHeatMapProps {
 const MAX_COORDINATE = 100;
 const POINT_RADIUS = 30;
 const TAP_THRESHOLD = 10; // Порог для определения тапа
-const MAX_POINTS = 5; // Максимальное количество точек
+const MAX_POINTS = 50; // Максимальное количество точек
 
 const InteractiveHeatMap = ({
   imageUrl,
