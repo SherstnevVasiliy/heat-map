@@ -26,17 +26,17 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
   // Конфигурация тепловой карты
   const heatmapConfig = useMemo(
     () => ({
-      radius: 40, // Больший радиус для более плавного отображения
-      blur: 0.9, // Уровень размытия для более гладкого перехода
-      maxOpacity: 0.7, // Максимальная непрозрачность тепловой карты
-      minOpacity: 0.2, // Минимальная непрозрачность
-      intensityDivisor: 15, // Делитель для расчета интенсивности (больше значение = меньше насыщенность)
+      radius: 35, // Увеличенный радиус для лучшего слияния точек
+      blur: 1.2, // Увеличенное размытие для более гладкого эффекта
+      maxOpacity: 0.8, // Увеличенная непрозрачность
+      minOpacity: 0.4, // Минимальная непрозрачность
+      intensityDivisor: 15, // Делитель для расчета интенсивности
       threshold: {
         low: 0.2, // Порог низкой активности
         medium: 0.5, // Порог средней активности
         high: 0.8, // Порог высокой активности
       },
-      adaptiveIntensity: false, // Автоматически адаптировать интенсивность в зависимости от количества точек
+      adaptiveIntensity: false, // Не адаптировать интенсивность
     }),
     []
   );
@@ -151,31 +151,30 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
 
     // Переходы цветов как в Яндекс Метрике:
     // Темно-синий -> синий -> красный -> желтый
-    if (normalized < 0.3) {
+    if (normalized < 0.05) {
+      // Синюю зону еще больше сократили (с 0.1 до 0.05)
       // Темно-синий к синему
-      const ratio = normalized / 0.3;
+      const ratio = normalized / 0.05;
       return {
         r: Math.floor(0 + ratio * 0),
         g: Math.floor(0),
         b: Math.floor(150 + ratio * 105),
-        a:
-          heatmapConfig.minOpacity +
-          normalized * (heatmapConfig.maxOpacity - heatmapConfig.minOpacity),
+        a: heatmapConfig.minOpacity, // Минимальная прозрачность для синего цвета
       };
-    } else if (normalized < 0.6) {
+    } else if (normalized < 0.5) {
+      // Расширили переход от синего к красному
       // Синий к красному
-      const ratio = (normalized - 0.3) / 0.3;
+      const ratio = (normalized - 0.05) / 0.45;
       return {
         r: Math.floor(0 + ratio * 255),
         g: Math.floor(0),
         b: Math.floor(255 - ratio * 255),
-        a:
-          heatmapConfig.minOpacity +
-          normalized * (heatmapConfig.maxOpacity - heatmapConfig.minOpacity),
+        a: heatmapConfig.minOpacity + ratio * (heatmapConfig.maxOpacity - heatmapConfig.minOpacity),
       };
-    } else if (normalized < 0.9) {
+    } else if (normalized < 0.85) {
+      // Расширили область желтого цвета
       // Красный к желтому
-      const ratio = (normalized - 0.6) / 0.3;
+      const ratio = (normalized - 0.5) / 0.35;
       return {
         r: Math.floor(255),
         g: Math.floor(0 + ratio * 255),
