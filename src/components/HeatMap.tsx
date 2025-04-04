@@ -1,6 +1,51 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import './HeatMap.css';
 
+// Встроенные точки для демонстрации
+const defaultPoints = [
+  { x: 47, y: 42, id: 'point-1' },
+  { x: 54, y: 48, id: 'point-2' },
+  { x: 68, y: 29, id: 'point-3' },
+  { x: 45, y: 23, id: 'point-4' },
+  { x: 26, y: 44, id: 'point-5' },
+  { x: 47, y: 21, id: 'point-6' },
+  { x: 69, y: 27, id: 'point-7' },
+  { x: 52, y: 47, id: 'point-8' },
+  { x: 28, y: 45, id: 'point-9' },
+  { x: 59, y: 55, id: 'point-10' },
+  { x: 43, y: 26, id: 'point-11' },
+  { x: 68, y: 28, id: 'point-12' },
+  { x: 61, y: 38, id: 'point-13' },
+  { x: 47, y: 37, id: 'point-14' },
+  { x: 52, y: 50, id: 'point-15' },
+  { x: 22, y: 42, id: 'point-16' },
+  { x: 29, y: 47, id: 'point-17' },
+  { x: 68, y: 80, id: 'point-18' },
+  { x: 52, y: 48, id: 'point-19' },
+  { x: 53, y: 63, id: 'point-20' },
+  { x: 48, y: 36, id: 'point-21' },
+  { x: 60, y: 38, id: 'point-22' },
+  { x: 69, y: 28, id: 'point-23' },
+  { x: 42, y: 25, id: 'point-24' },
+  { x: 26, y: 45, id: 'point-25' },
+  { x: 26, y: 91, id: 'point-26' },
+  { x: 33, y: 86, id: 'point-27' },
+  { x: 42, y: 78, id: 'point-28' },
+  { x: 96, y: 91, id: 'point-29' },
+  { x: 59, y: 38, id: 'point-30' },
+  { x: 48, y: 37, id: 'point-31' },
+  { x: 52, y: 50, id: 'point-32' },
+  { x: 25, y: 43, id: 'point-33' },
+  { x: 33, y: 47, id: 'point-34' },
+  { x: 64, y: 79, id: 'point-35' },
+  { x: 75, y: 81, id: 'point-36' },
+  { x: 71, y: 63, id: 'point-37' },
+  { x: 70, y: 50, id: 'point-38' },
+  { x: 69, y: 27, id: 'point-39' },
+  { x: 41, y: 24, id: 'point-40' },
+  { x: 56, y: 27, id: 'point-41' },
+];
+
 interface ClickPoint {
   x: number;
   y: number;
@@ -15,7 +60,9 @@ interface HeatMapProps {
 
 const MAX_COORDINATE = 100;
 
-const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
+const HeatMap = ({ imageUrl, aspectRatio = 1, points: propPoints }: HeatMapProps) => {
+  // Используем точки из props или дефолтные, если пропсы пустые
+  const [pointsToRender, setPointsToRender] = useState<ClickPoint[]>([]);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isSimpleMode, setIsSimpleMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,13 +70,22 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
 
+  // Обновляем точки при изменении props
+  useEffect(() => {
+    if (propPoints && propPoints.length > 0) {
+      setPointsToRender(propPoints);
+    } else {
+      setPointsToRender(defaultPoints);
+    }
+  }, [propPoints]);
+
   // Конфигурация тепловой карты
   const heatmapConfig = useMemo(
     () => ({
       radius: 35, // Увеличенный радиус для лучшего слияния точек
-      blur: 1.2, // Увеличенное размытие для более гладкого эффекта
-      maxOpacity: 0.8, // Увеличенная непрозрачность
-      minOpacity: 0.4, // Минимальная непрозрачность
+      blur: 1.8, // Увеличенное размытие для более гладкого эффекта
+      maxOpacity: 0.95, // Увеличенная непрозрачность
+      minOpacity: 0.2, // Низкая непрозрачность для синего
       intensityDivisor: 15, // Делитель для расчета интенсивности
       threshold: {
         low: 0.2, // Порог низкой активности
@@ -37,6 +93,7 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
         high: 0.8, // Порог высокой активности
       },
       adaptiveIntensity: false, // Не адаптировать интенсивность
+      useSimpleAlgorithm: true, // Использовать простой алгоритм
     }),
     []
   );
@@ -80,36 +137,125 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     // Используем типизированный массив для лучшей производительности и меньшего расхода памяти
     const intensityMap = new Float32Array(width * height);
 
-    points.forEach((point) => {
+    // Используем более простой алгоритм, если нужно
+    if (heatmapConfig.useSimpleAlgorithm) {
+      pointsToRender.forEach((point) => {
+        const x = Math.floor((point.x / MAX_COORDINATE) * width);
+        const y = Math.floor((point.y / MAX_COORDINATE) * height);
+
+        // Проверка валидности координат
+        if (x < 0 || x >= width || y < 0 || y >= height) {
+          console.log('Невалидные координаты точки:', point, 'преобразованы в:', x, y);
+          return;
+        }
+
+        const radius = Math.min(heatmapConfig.radius, Math.min(width, height) / 4);
+        const radiusSquared = radius * radius;
+
+        // Ограничиваем область обработки
+        const startX = Math.max(0, x - radius);
+        const endX = Math.min(width - 1, x + radius);
+        const startY = Math.max(0, y - radius);
+        const endY = Math.min(height - 1, y + radius);
+
+        // Оптимизированный цикл
+        for (let i = startX; i <= endX; i++) {
+          for (let j = startY; j <= endY; j++) {
+            const distSquared = (i - x) * (i - x) + (j - y) * (j - y);
+
+            if (distSquared <= radiusSquared) {
+              // Гауссовое распределение для более естественного затухания
+              const factor = Math.exp(-distSquared / (2 * (radius / 2) * (radius / 2)));
+
+              const index = j * width + i;
+              if (index >= 0 && index < intensityMap.length) {
+                intensityMap[index] += factor;
+              }
+            }
+          }
+        }
+      });
+
+      return intensityMap;
+    }
+
+    // Более сложный алгоритм с эллиптическими формами
+    pointsToRender.forEach((point) => {
       const x = Math.floor((point.x / MAX_COORDINATE) * width);
       const y = Math.floor((point.y / MAX_COORDINATE) * height);
 
       // Проверка валидности координат
-      if (x < 0 || x >= width || y < 0 || y >= height) return;
+      if (x < 0 || x >= width || y < 0 || y >= height) {
+        console.log('Невалидные координаты точки:', point, 'преобразованы в:', x, y);
+        return;
+      }
 
-      const radius = Math.min(heatmapConfig.radius, Math.min(width, height) / 4);
-      const radiusSquared = radius * radius;
+      const baseRadius = Math.min(heatmapConfig.radius, Math.min(width, height) / 4);
 
-      // Ограничиваем область обработки, чтобы избежать переполнения стека
-      const startX = Math.max(0, x - radius);
-      const endX = Math.min(width - 1, x + radius);
-      const startY = Math.max(0, y - radius);
-      const endY = Math.min(height - 1, y + radius);
+      // Создаем случайные вариации для радиуса в разных направлениях
+      const radiusX = baseRadius * (0.8 + Math.random() * 0.5); // 80-130% от основного радиуса
+      const radiusY = baseRadius * (0.8 + Math.random() * 0.5);
+
+      // Добавляем небольшой наклон для эффекта капли или растянутости
+      const angle = Math.random() * Math.PI * 2; // Случайный угол наклона
+
+      // Определяем максимальный радиус для обработки
+      const maxRadius = Math.max(radiusX, radiusY);
+
+      // Убедимся, что радиусы имеют целочисленное значение
+      const safeMaxRadius = Math.ceil(maxRadius);
+
+      // Ограничиваем область обработки
+      const startX = Math.max(0, x - safeMaxRadius);
+      const endX = Math.min(width - 1, x + safeMaxRadius);
+      const startY = Math.max(0, y - safeMaxRadius);
+      const endY = Math.min(height - 1, y + safeMaxRadius);
+
+      // Генерируем случайные смещения для центра (создает эффект неправильной формы)
+      const offsetX = (Math.random() - 0.5) * baseRadius * 0.3;
+      const offsetY = (Math.random() - 0.5) * baseRadius * 0.3;
+
+      // Если область обработки слишком мала, пропускаем
+      if (startX >= endX || startY >= endY) {
+        console.log('Слишком маленькая область обработки для точки:', point);
+        return;
+      }
+
+      let pixelsProcessed = 0;
 
       // Оптимизированный цикл
       for (let i = startX; i <= endX; i++) {
         for (let j = startY; j <= endY; j++) {
-          const distSquared = (i - x) * (i - x) + (j - y) * (j - y);
+          // Трансформируем координаты с учетом наклона
+          const dx = i - (x + offsetX);
+          const dy = j - (y + offsetY);
 
-          if (distSquared <= radiusSquared) {
-            // Гауссовое распределение для более естественного затухания
-            const factor = Math.exp(-distSquared / (2 * (radius / 2.5) * (radius / 2.5)));
+          // Рассчитываем дистанцию с учетом искажения формы
+          const normX = dx * Math.cos(angle) + dy * Math.sin(angle);
+          const normY = -dx * Math.sin(angle) + dy * Math.cos(angle);
+
+          // Эллиптическая дистанция вместо круговой
+          const distSquared =
+            (normX * normX) / (radiusX * radiusX) + (normY * normY) / (radiusY * radiusY);
+
+          if (distSquared <= 1.0) {
+            // Внутри эллипса
+            // Гауссовое распределение для более естественного затухания с небольшой вариацией
+            // Множитель в экспоненте влияет на крутизну затухания
+            const variableSigma = (radiusX + radiusY) / (4.0 + Math.random());
+            const factor = Math.exp(-distSquared / (2 * variableSigma * variableSigma));
+
             const index = j * width + i;
             if (index >= 0 && index < intensityMap.length) {
               intensityMap[index] += factor;
+              pixelsProcessed++;
             }
           }
         }
+      }
+
+      if (pixelsProcessed === 0) {
+        console.log('Ни один пиксель не был обработан для точки:', point);
       }
     });
 
@@ -119,7 +265,7 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
   // Функция для расчета адаптивной интенсивности
   const calculateAdaptiveIntensity = () => {
     const basePointsCount = 10;
-    const points_count = points.length;
+    const points_count = pointsToRender.length;
 
     if (points_count <= basePointsCount) {
       return 1.0;
@@ -159,7 +305,7 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
         r: Math.floor(0 + ratio * 0),
         g: Math.floor(0),
         b: Math.floor(150 + ratio * 105),
-        a: heatmapConfig.minOpacity, // Минимальная прозрачность для синего цвета
+        a: heatmapConfig.minOpacity * 0.7, // Еще меньше прозрачность для синего
       };
     } else if (normalized < 0.5) {
       // Расширили переход от синего к красному
@@ -179,9 +325,10 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
         r: Math.floor(255),
         g: Math.floor(0 + ratio * 255),
         b: Math.floor(0),
-        a:
-          heatmapConfig.minOpacity +
-          normalized * (heatmapConfig.maxOpacity - heatmapConfig.minOpacity),
+        a: Math.min(
+          heatmapConfig.maxOpacity,
+          heatmapConfig.minOpacity + ratio * 0.5 + normalized * 0.3
+        ),
       };
     } else {
       // Яркий желтый для самых горячих зон
@@ -189,9 +336,7 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
         r: Math.floor(255),
         g: Math.floor(255),
         b: Math.floor(0),
-        a:
-          heatmapConfig.minOpacity +
-          normalized * (heatmapConfig.maxOpacity - heatmapConfig.minOpacity),
+        a: heatmapConfig.maxOpacity,
       };
     }
   };
@@ -216,7 +361,7 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     if (isSimpleMode) {
       // Простой режим: рисуем красные круги
       ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
-      points.forEach((point) => {
+      pointsToRender.forEach((point) => {
         const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
         const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
 
@@ -230,7 +375,12 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     }
 
     // Если нет точек, просто выходим
-    if (points.length === 0) return;
+    if (pointsToRender.length === 0) {
+      console.log('Нет точек для отрисовки тепловой карты');
+      return;
+    }
+
+    console.log('Отрисовка тепловой карты с', pointsToRender.length, 'точками');
 
     // Расчет адаптивной интенсивности
     const adaptiveIntensity = heatmapConfig.adaptiveIntensity ? calculateAdaptiveIntensity() : 1.0;
@@ -238,12 +388,15 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     // Создаем временный canvas для накопления интенсивности с большим размером для лучшего размытия
     const tempCanvas = document.createElement('canvas');
     // Уменьшаем масштаб для производительности, если точек много
-    const scaleFactor = points.length > 100 ? 0.5 : 1;
+    const scaleFactor = pointsToRender.length > 100 ? 0.5 : 1;
     tempCanvas.width = Math.floor(dimensions.width * scaleFactor);
     tempCanvas.height = Math.floor(dimensions.height * scaleFactor);
 
     // Проверяем, что размеры валидные
-    if (tempCanvas.width <= 0 || tempCanvas.height <= 0) return;
+    if (tempCanvas.width <= 0 || tempCanvas.height <= 0) {
+      console.log('Неверные размеры временного canvas', tempCanvas.width, tempCanvas.height);
+      return;
+    }
 
     const tempCtx = tempCanvas.getContext('2d');
     if (!tempCtx) return;
@@ -251,6 +404,19 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     try {
       // Получаем карту интенсивности
       const intensityMap = createIntensityMap(tempCanvas.width, tempCanvas.height);
+
+      // Проверяем, содержит ли карта ненулевые значения
+      let hasNonZeroValues = false;
+      for (let i = 0; i < intensityMap.length; i++) {
+        if (intensityMap[i] > 0) {
+          hasNonZeroValues = true;
+          break;
+        }
+      }
+
+      if (!hasNonZeroValues) {
+        console.log('Карта интенсивности пуста - все значения равны 0');
+      }
 
       // Находим максимальную интенсивность для нормализации
       let maxIntensity = 0;
@@ -260,15 +426,25 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
       // Если макс. интенсивность слишком мала, устанавливаем значение по умолчанию
       maxIntensity = maxIntensity || 1;
 
+      console.log('Максимальная интенсивность:', maxIntensity);
+
       // Создаем изображение данных
       const imageData = tempCtx.createImageData(tempCanvas.width, tempCanvas.height);
       const data = imageData.data;
 
-      // Заполняем данные пикселей на основе интенсивности
-      for (let i = 0; i < intensityMap.length; i++) {
-        const intensity = (intensityMap[i] / maxIntensity) * adaptiveIntensity;
+      // Предварительное размытие интенсивности для более плавных переходов
+      const smoothedIntensityMap = smoothIntensityMap(
+        intensityMap,
+        tempCanvas.width,
+        tempCanvas.height
+      );
 
-        if (intensity > 0.05) {
+      // Заполняем данные пикселей на основе интенсивности
+      for (let i = 0; i < smoothedIntensityMap.length; i++) {
+        const intensity = (smoothedIntensityMap[i] / maxIntensity) * adaptiveIntensity;
+
+        if (intensity > 0.01) {
+          // Уменьшаем порог отображения
           // Игнорируем очень низкую интенсивность
           const color = getHeatMapColor(intensity);
 
@@ -288,8 +464,8 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
         tempCtx.globalAlpha = 1;
         const blurValue = heatmapConfig.blur * 4;
 
-        // Ограничиваем количество проходов размытия
-        const blurPasses = Math.min(2, Math.ceil(points.length / 50));
+        // Увеличиваем количество проходов размытия
+        const blurPasses = Math.min(3, Math.ceil(pointsToRender.length / 40));
         for (let i = 0; i < blurPasses; i++) {
           tempCtx.filter = `blur(${blurValue}px)`;
           tempCtx.drawImage(tempCanvas, 0, 0);
@@ -309,11 +485,13 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
         dimensions.width,
         dimensions.height
       );
+
+      console.log('Тепловая карта отрисована успешно');
     } catch (error) {
       console.error('Ошибка при рисовании тепловой карты:', error);
       // В случае ошибки нарисуем простые точки
       ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
-      points.forEach((point) => {
+      pointsToRender.forEach((point) => {
         const denormalizedX = (point.x / MAX_COORDINATE) * dimensions.width;
         const denormalizedY = (point.y / MAX_COORDINATE) * dimensions.height;
         ctx.beginPath();
@@ -321,6 +499,51 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
         ctx.fill();
       });
     }
+  };
+
+  // Функция для сглаживания интенсивности для более плавных переходов между точками
+  const smoothIntensityMap = (
+    intensityMap: Float32Array,
+    width: number,
+    height: number
+  ): Float32Array => {
+    const smoothed = new Float32Array(intensityMap.length);
+    const radius = 2; // Радиус сглаживания
+
+    // Копируем исходную карту
+    for (let i = 0; i < intensityMap.length; i++) {
+      smoothed[i] = intensityMap[i];
+    }
+
+    // Применяем средний фильтр (box blur) для сглаживания
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (intensityMap[y * width + x] > 0) {
+          let sum = 0;
+          let count = 0;
+
+          // Суммируем значения соседних пикселей
+          for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+              const nx = x + dx;
+              const ny = y + dy;
+
+              if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                sum += intensityMap[ny * width + nx];
+                count++;
+              }
+            }
+          }
+
+          // Вычисляем среднее значение и увеличиваем на 20% для компенсации потери яркости
+          if (count > 0) {
+            smoothed[y * width + x] = (sum / count) * 1.2;
+          }
+        }
+      }
+    }
+
+    return smoothed;
   };
 
   const handleToggleMode = () => {
@@ -331,7 +554,7 @@ const HeatMap = ({ imageUrl, aspectRatio = 1, points }: HeatMapProps) => {
     if (isImageLoaded && dimensions.width > 0 && dimensions.height > 0) {
       drawHeatMap();
     }
-  }, [points, dimensions, isSimpleMode, isImageLoaded]);
+  }, [pointsToRender, dimensions, isSimpleMode, isImageLoaded]);
 
   return (
     <div className="wrapper">
