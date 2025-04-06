@@ -127,7 +127,7 @@ const DeckGLHeatmap: React.FC<DeckGLHeatmapProps> = ({
       getPosition: (d: Point) => d.position,
       getWeight: (d: Point) => d.weight,
       radiusPixels: 100, // Значительно увеличиваем радиус для лучшей видимости
-      intensity: 2, // Увеличиваем интенсивность
+      intensity: 1.5, // Увеличиваем интенсивность
       threshold: 0.01, // Уменьшаем порог для лучшей видимости
       // Изменяем цветовую схему: синий -> красный -> желтый
       colorRange: [
