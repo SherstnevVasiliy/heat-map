@@ -42,24 +42,76 @@
 }
 
 .app {
+  width: 100%;
   min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  background-color: #f5f5f5;
+  flex-direction: column;
+  align-items: center;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .content {
-  text-align: center;
   width: 100%;
   max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
 h1 {
-  margin-bottom: 20px;
+  margin: 0;
   color: #333;
-  font-size: 2rem;
+  text-align: center;
+}
+
+/* Стили для контейнеров тепловых карт */
+.heatmap-container,
+.deckgl-container {
+  width: 100%;
+  max-width: 800px;
+  height: 400px;
+  min-height: 400px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background-color: #f5f5f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Стили для контейнера изображения в deck.gl */
+.deckgl-image-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Стили для изображения внутри контейнера */
+.heatmap-container img,
+.deckgl-container img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Стили для canvas deck.gl */
+.deckgl-container canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 @media (max-width: 768px) {

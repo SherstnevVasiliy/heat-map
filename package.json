@@ -12,6 +12,7 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,md}\""
   },
   "dependencies": {
+    "deck.gl": "^9.1.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
