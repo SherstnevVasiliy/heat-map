@@ -6,13 +6,18 @@ import './styles.css';
 export default function App() {
   const heatmapRef = useRef(null);
   const data = clicks.map((item) => {
-    return [item.x * 6, item.y * 6, 1.3];
+    return [item.x * 6, item.y * 6, 1.5];
   });
   useEffect(() => {
     if (heatmapRef && heatmapRef.current) {
       const heatmap = simpleheat(heatmapRef.current);
       heatmap.data(data as [number, number, number][]);
       heatmap.radius(30, 25);
+      heatmap.gradient({
+        0.1: 'blue',
+        0.7: 'red',
+        1.0: '#ecff00',
+      });
       heatmap.max(2);
       heatmap.draw();
     }
