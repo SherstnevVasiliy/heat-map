@@ -2,6 +2,7 @@ import HeatMapContainer from './components/HeatMapContainer';
 import DeckGLHeatmap from './components/DeckGLHeatmap';
 import './App.css';
 import QwenHeatmap from './components/qwen/QwenHeatMap';
+import HeatmapComponent from './components/qwen2/Qwen2HeatMAp';
 
 function App() {
   const clicks = [
@@ -56,8 +57,11 @@ function App() {
             <DeckGLHeatmap imageUrl="sample-image.webp" aspectRatio={1} />
           </div>
         </div> */}
-        <div>
+        {/* <div>
           <QwenHeatmap />
+        </div> */}
+        <div style={{ width: '600px', margin: '0 auto' }}>
+          <HeatmapComponent />
         </div>
       </div>
     </div>
