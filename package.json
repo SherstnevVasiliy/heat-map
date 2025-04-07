@@ -13,13 +13,17 @@
   },
   "dependencies": {
     "deck.gl": "^9.1.8",
+    "heatmap.js": "^2.0.5",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "simpleheat": "^0.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^8.56.0",
+    "@types/heatmap.js": "^2.0.41",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@types/simpleheat": "^0.4.3",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vitejs/plugin-react": "^4.3.4",
