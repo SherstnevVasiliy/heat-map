@@ -60,7 +60,7 @@ function App() {
         {/* <div>
           <QwenHeatmap />
         </div> */}
-        <div style={{ width: '600px', margin: '0 auto' }}>
+        <div style={{ width: '800px', margin: '0 auto' }}>
           <HeatmapComponent />
         </div>
       </div>

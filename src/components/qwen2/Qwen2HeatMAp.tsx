@@ -94,7 +94,7 @@ const HeatmapComponent: React.FC = () => {
   // Начальное состояние вида
   const viewState = {
     target: [dimensions.width / 2, dimensions.height / 2, 0] as [number, number, number],
-    zoom: 0.02,
+    // zoom: 0.0,
   };
 
   // Настройка слоя тепловой карты
